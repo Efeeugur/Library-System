@@ -1,0 +1,23 @@
+[
+  {
+    "UserId": "c3ce7908-13df-44df-98c0-991edcc453db",
+    "Username": "efeugur_",
+    "PasswordHash": "kp3nXZK\u002B7KKZN4UQt9DS2LdylJIXc1UtpBqu7o/fFGs=:LHFv8cItT2tFqjbBcQ0hvg==",
+    "Role": 0,
+    "CreatedDate": "2025-08-20T13:02:12.632266+03:00"
+  },
+  {
+    "UserId": "1462da1d-70f8-4e90-91e8-25c297955f22",
+    "Username": "egeugur_",
+    "PasswordHash": "pKv9yWtNp942To7D2XuV9h3fO5th6JZVOVmJ3oexJuE=:BB4lHi5voFEthEQl2uRYHA==",
+    "Role": 1,
+    "CreatedDate": "2025-08-20T13:04:50.508456+03:00"
+  },
+  {
+    "UserId": "57f9291d-5480-4240-80d9-c3f604d3ca9b",
+    "Username": "ilkayugur_",
+    "PasswordHash": "K/qXK4mstpqlEF3D6sBtvjx4bP\u002BXnfb2BKRxHAC\u002BAd8=:8cn/F4bjtBUX5Al0UHde8w==",
+    "Role": 0,
+    "CreatedDate": "2025-08-21T06:57:59.280249Z"
+  }
+]
