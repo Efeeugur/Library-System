@@ -5,13 +5,10 @@ using LibraryManagementSystem.Utils;
 
 namespace LibraryManagementSystem.BusinessLogic.Services
 {
-    public class UserManagerNew : IUserManager
+    public class UserManagerNew : BaseService, IUserManager
     {
-        private readonly IDataRepository _dataRepository;
-
-        public UserManagerNew(IDataRepository dataRepository)
+        public UserManagerNew(IDataRepository dataRepository) : base(dataRepository)
         {
-            _dataRepository = dataRepository;
         }
 
         public async Task<User?> AuthenticateUserAsync(string username, string password)
@@ -26,9 +23,12 @@ namespace LibraryManagementSystem.BusinessLogic.Services
 
         public async Task<bool> RegisterUserAsync(string username, string password, UserRole role = UserRole.RegularUser)
         {
+            if (IsNullOrEmpty(username) || IsNullOrEmpty(password))
+                return false;
+
             // Check if username already exists
             var existingUser = await _dataRepository.GetUserByUsernameAsync(username);
-            if (existingUser != null)
+            if (IsEntityFound(existingUser))
                 return false;
 
             var passwordHash = SecurityHelper.HashPassword(password);
@@ -37,25 +37,18 @@ namespace LibraryManagementSystem.BusinessLogic.Services
             return await _dataRepository.AddUserAsync(newUser);
         }
 
-        public async Task<User?> GetUserByIdAsync(string userId)
-        {
-            return await _dataRepository.GetUserByIdAsync(userId);
-        }
+        // Direct repository calls - no additional business logic needed
+        public async Task<User?> GetUserByIdAsync(string userId) => 
+            await _dataRepository.GetUserByIdAsync(userId);
 
-        public async Task<User?> GetUserByUsernameAsync(string username)
-        {
-            return await _dataRepository.GetUserByUsernameAsync(username);
-        }
+        public async Task<User?> GetUserByUsernameAsync(string username) => 
+            await _dataRepository.GetUserByUsernameAsync(username);
 
-        public async Task<List<User>> GetAllUsersAsync()
-        {
-            return await _dataRepository.LoadUsersAsync();
-        }
+        public async Task<List<User>> GetAllUsersAsync() => 
+            await _dataRepository.LoadUsersAsync();
 
-        public async Task<bool> UpdateUserAsync(User user)
-        {
-            return await _dataRepository.UpdateUserAsync(user);
-        }
+        public async Task<bool> UpdateUserAsync(User user) => 
+            await _dataRepository.UpdateUserAsync(user);
 
         public async Task<bool> DeleteUserAsync(string userId)
         {

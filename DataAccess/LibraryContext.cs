@@ -39,7 +39,7 @@ namespace LibraryManagementSystem.DataAccess
                 entity.Property(e => e.Author).HasMaxLength(300).IsRequired();
                 entity.Property(e => e.ISBN).HasMaxLength(50).IsRequired(false); // Make ISBN optional
                 entity.Property(e => e.Status).HasConversion<string>();
-                
+
                 // Create a unique index on ISBN only for non-null values
                 entity.HasIndex(e => e.ISBN)
                     .IsUnique()
@@ -54,13 +54,13 @@ namespace LibraryManagementSystem.DataAccess
                 entity.Property(e => e.UserId).HasMaxLength(50).IsRequired();
                 entity.Property(e => e.BookId).HasMaxLength(50).IsRequired();
                 entity.Property(e => e.Status).HasConversion<string>();
-                
+
                 // Foreign key relationships
                 entity.HasOne<User>()
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasOne<Book>()
                     .WithMany()
                     .HasForeignKey(e => e.BookId)
@@ -76,18 +76,18 @@ namespace LibraryManagementSystem.DataAccess
                 entity.Property(e => e.BookId).HasMaxLength(50).IsRequired();
                 entity.Property(e => e.AdminId).HasMaxLength(50).IsRequired(false);
                 entity.Property(e => e.Status).HasConversion<string>();
-                
+
                 // Foreign key relationships
                 entity.HasOne<User>()
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasOne<Book>()
                     .WithMany()
                     .HasForeignKey(e => e.BookId)
                     .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasOne<User>()
                     .WithMany()
                     .HasForeignKey(e => e.AdminId)

@@ -71,7 +71,7 @@ namespace LibraryManagementSystem
                 else
                 {
                     Console.WriteLine($"Welcome, {_currentUser.Username} ({_currentUser.Role})");
-                    
+
                     if (_currentUser.Role == UserRole.Admin)
                     {
                         // Admin Menu
@@ -233,10 +233,10 @@ namespace LibraryManagementSystem
             try
             {
                 Console.WriteLine($"Switching to {newDataSource}...");
-                
+
                 // Preserve current user session
                 var currentUser = _currentUser;
-                
+
                 // Dispose current repository if it implements IDisposable
                 if (_dataRepository is IDisposable disposableRepo)
                 {
@@ -263,7 +263,7 @@ namespace LibraryManagementSystem
                 {
                     var restoredUser = await userManager.GetUserByIdAsync(currentUser.UserId);
                     _currentUser = restoredUser ?? null;
-                    
+
                     if (_currentUser == null)
                     {
                         Console.WriteLine("Warning: Your session was lost during the switch. Please login again.");
@@ -517,15 +517,15 @@ namespace LibraryManagementSystem
         {
             Console.WriteLine("\n=== Approve Request ===");
             Console.Write($"Enter request number to approve (1-{requests.Count}): ");
-            
-            if (int.TryParse(Console.ReadLine(), out int requestNumber) && 
+
+            if (int.TryParse(Console.ReadLine(), out int requestNumber) &&
                 requestNumber >= 1 && requestNumber <= requests.Count)
             {
                 var request = requests[requestNumber - 1];
                 var bookManager = (BookManagerNew)_bookLending;
-                
+
                 var success = await bookManager.ApproveRequestAsync(request.RequestId, _currentUser.UserId);
-                
+
                 if (success)
                 {
                     Console.WriteLine("Request approved successfully! The book has been lent to the user.");
@@ -545,15 +545,15 @@ namespace LibraryManagementSystem
         {
             Console.WriteLine("\n=== Reject Request ===");
             Console.Write($"Enter request number to reject (1-{requests.Count}): ");
-            
-            if (int.TryParse(Console.ReadLine(), out int requestNumber) && 
+
+            if (int.TryParse(Console.ReadLine(), out int requestNumber) &&
                 requestNumber >= 1 && requestNumber <= requests.Count)
             {
                 var request = requests[requestNumber - 1];
                 var bookManager = (BookManagerNew)_bookLending;
-                
+
                 var success = await bookManager.RejectRequestAsync(request.RequestId, _currentUser.UserId);
-                
+
                 if (success)
                 {
                     Console.WriteLine("Request rejected successfully.");
@@ -642,7 +642,7 @@ namespace LibraryManagementSystem
         private static async Task ReturnBookAsync()
         {
             Console.WriteLine("\n=== Return Book ===");
-            
+
             // First, show user's borrowed books
             var bookManager = (BookManagerNew)_bookLending;
             var borrowedBooks = await bookManager.GetBorrowedBooksAsync(_currentUser.UserId);
@@ -683,7 +683,7 @@ namespace LibraryManagementSystem
         {
             Console.WriteLine("\n=== Manage Returns ===");
             var bookManager = (BookManagerNew)_bookLending;
-            
+
             // Get all active borrowing records (books that are currently borrowed)
             var allBorrowingRecords = await _dataRepository.LoadBorrowingRecordsAsync();
             var activeBorrowings = allBorrowingRecords.Where(r => r.Status == BorrowingStatus.Active).ToList();
@@ -699,7 +699,7 @@ namespace LibraryManagementSystem
             {
                 var user = await _dataRepository.GetUserByIdAsync(record.UserId);
                 var book = await _dataRepository.GetBookByIdAsync(record.BookId);
-                
+
                 if (user != null && book != null)
                 {
                     var overdue = record.DueDate < DateTime.UtcNow ? " [OVERDUE]" : "";
@@ -712,7 +712,7 @@ namespace LibraryManagementSystem
             Console.WriteLine("2. View overdue books");
             Console.WriteLine("0. Back to main menu");
             Console.Write("Choose option: ");
-            
+
             var choice = Console.ReadLine();
             switch (choice)
             {
@@ -741,7 +741,7 @@ namespace LibraryManagementSystem
 
             var userManager = (UserManagerNew)_userManager;
             var user = await userManager.GetUserByUsernameAsync(username);
-            
+
             if (user == null)
             {
                 Console.WriteLine("User not found.");
@@ -750,7 +750,7 @@ namespace LibraryManagementSystem
 
             var bookManager = (BookManagerNew)_bookLending;
             var success = await bookManager.ReturnBookAsync(user.UserId, isbn);
-            
+
             if (success)
             {
                 Console.WriteLine("Book return processed successfully!");
@@ -779,7 +779,7 @@ namespace LibraryManagementSystem
             {
                 var user = await _dataRepository.GetUserByIdAsync(record.UserId);
                 var book = await _dataRepository.GetBookByIdAsync(record.BookId);
-                
+
                 if (user != null && book != null)
                 {
                     var daysOverdue = (DateTime.UtcNow - record.DueDate).Days;

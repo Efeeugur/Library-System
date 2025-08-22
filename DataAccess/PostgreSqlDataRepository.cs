@@ -13,6 +13,50 @@ namespace LibraryManagementSystem.DataAccess
             _context = context;
         }
 
+        // Generic CRUD helper methods to reduce code duplication
+        private async Task<bool> TryExecuteAsync(Func<Task> operation)
+        {
+            try
+            {
+                await operation();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Database operation failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        private async Task<bool> AddEntityAsync<T>(T entity) where T : class
+        {
+            return await TryExecuteAsync(async () =>
+            {
+                _context.Set<T>().Add(entity);
+                await _context.SaveChangesAsync();
+            });
+        }
+
+        private async Task<bool> UpdateEntityAsync<T>(T entity) where T : class
+        {
+            return await TryExecuteAsync(async () =>
+            {
+                _context.Set<T>().Update(entity);
+                await _context.SaveChangesAsync();
+            });
+        }
+
+        private async Task<bool> DeleteEntityAsync<T>(string id) where T : class
+        {
+            return await TryExecuteAsync(async () =>
+            {
+                var entity = await _context.Set<T>().FindAsync(id);
+                if (entity == null) return;
+                _context.Set<T>().Remove(entity);
+                await _context.SaveChangesAsync();
+            });
+        }
+
         public async Task InitializeAsync()
         {
             try
@@ -43,99 +87,39 @@ namespace LibraryManagementSystem.DataAccess
         }
 
         // User operations
-        public async Task<List<User>> LoadUsersAsync()
-        {
-            return await _context.Users.ToListAsync();
-        }
+        public async Task<List<User>> LoadUsersAsync() => 
+            await _context.Users.ToListAsync();
 
-        public async Task SaveUsersAsync(List<User> users)
-        {
-            throw new NotSupportedException("Use individual user operations for database storage");
-        }
+        public async Task<User?> GetUserByIdAsync(string userId) => 
+            await _context.Users.FindAsync(userId);
 
-        public async Task<User?> GetUserByIdAsync(string userId)
-        {
-            return await _context.Users.FindAsync(userId);
-        }
-
-        public async Task<User?> GetUserByUsernameAsync(string username)
-        {
-            return await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == username);
-        }
+        public async Task<User?> GetUserByUsernameAsync(string username) => 
+            await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
 
         public async Task<bool> AddUserAsync(User user)
         {
-            try
-            {
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error adding user to PostgreSQL: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                }
-                return false;
-            }
+            return await AddEntityAsync(user);
         }
 
         public async Task<bool> UpdateUserAsync(User user)
         {
-            try
-            {
-                _context.Users.Update(user);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await UpdateEntityAsync(user);
         }
 
         public async Task<bool> DeleteUserAsync(string userId)
         {
-            try
-            {
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null) return false;
-
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await DeleteEntityAsync<User>(userId);
         }
 
         // Book operations
-        public async Task<List<Book>> LoadBooksAsync()
-        {
-            return await _context.Books.ToListAsync();
-        }
+        public async Task<List<Book>> LoadBooksAsync() => 
+            await _context.Books.ToListAsync();
 
-        public async Task SaveBooksAsync(List<Book> books)
-        {
-            // This method is primarily for file-based operations
-            throw new NotSupportedException("Use individual book operations for database storage");
-        }
+        public async Task<Book?> GetBookByIdAsync(string bookId) => 
+            await _context.Books.FindAsync(bookId);
 
-        public async Task<Book?> GetBookByIdAsync(string bookId)
-        {
-            return await _context.Books.FindAsync(bookId);
-        }
-
-        public async Task<Book?> GetBookByIsbnAsync(string isbn)
-        {
-            return await _context.Books
-                .FirstOrDefaultAsync(b => b.ISBN == isbn);
-        }
+        public async Task<Book?> GetBookByIsbnAsync(string isbn) => 
+            await _context.Books.FirstOrDefaultAsync(b => b.ISBN == isbn);
 
         public async Task<List<Book>> SearchBooksAsync(string searchTerm)
         {
@@ -148,13 +132,11 @@ namespace LibraryManagementSystem.DataAccess
 
         public async Task<bool> AddBookAsync(Book book)
         {
-            try
+            return await TryExecuteAsync(async () =>
             {
                 // Handle empty ISBN - set to null for database storage
                 if (string.IsNullOrWhiteSpace(book.ISBN))
-                {
                     book.ISBN = null;
-                }
 
                 // Check if ISBN already exists (only if not null/empty)
                 if (!string.IsNullOrWhiteSpace(book.ISBN))
@@ -162,68 +144,28 @@ namespace LibraryManagementSystem.DataAccess
                     var existingBook = await _context.Books
                         .FirstOrDefaultAsync(b => b.ISBN == book.ISBN);
                     if (existingBook != null)
-                    {
-                        Console.WriteLine($"Error: A book with ISBN '{book.ISBN}' already exists.");
-                        return false;
-                    }
+                        throw new InvalidOperationException($"A book with ISBN '{book.ISBN}' already exists.");
                 }
 
                 _context.Books.Add(book);
                 await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error adding book to PostgreSQL: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                }
-                return false;
-            }
+            });
         }
 
         public async Task<bool> UpdateBookAsync(Book book)
         {
-            try
-            {
-                _context.Books.Update(book);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await UpdateEntityAsync(book);
         }
 
         public async Task<bool> DeleteBookAsync(string bookId)
         {
-            try
-            {
-                var book = await _context.Books.FindAsync(bookId);
-                if (book == null) return false;
-
-                _context.Books.Remove(book);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await DeleteEntityAsync<Book>(bookId);
         }
 
         // Borrowing records operations
-        public async Task<List<BorrowingRecord>> LoadBorrowingRecordsAsync()
-        {
-            return await _context.BorrowingRecords.ToListAsync();
-        }
+        public async Task<List<BorrowingRecord>> LoadBorrowingRecordsAsync() => 
+            await _context.BorrowingRecords.ToListAsync();
 
-        public async Task SaveBorrowingRecordsAsync(List<BorrowingRecord> records)
-        {
-            throw new NotSupportedException("Use individual borrowing record operations for database storage");
-        }
 
         public async Task<List<BorrowingRecord>> GetBorrowingRecordsByUserIdAsync(string userId)
         {
@@ -242,42 +184,18 @@ namespace LibraryManagementSystem.DataAccess
 
         public async Task<bool> AddBorrowingRecordAsync(BorrowingRecord record)
         {
-            try
-            {
-                _context.BorrowingRecords.Add(record);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await AddEntityAsync(record);
         }
 
         public async Task<bool> UpdateBorrowingRecordAsync(BorrowingRecord record)
         {
-            try
-            {
-                _context.BorrowingRecords.Update(record);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await UpdateEntityAsync(record);
         }
 
         // Borrowing requests operations
-        public async Task<List<BorrowingRequest>> LoadBorrowingRequestsAsync()
-        {
-            return await _context.BorrowingRequests.ToListAsync();
-        }
+        public async Task<List<BorrowingRequest>> LoadBorrowingRequestsAsync() => 
+            await _context.BorrowingRequests.ToListAsync();
 
-        public async Task SaveBorrowingRequestsAsync(List<BorrowingRequest> requests)
-        {
-            throw new NotSupportedException("Use individual borrowing request operations for database storage");
-        }
 
         public async Task<List<BorrowingRequest>> GetPendingRequestsAsync()
         {
@@ -286,64 +204,22 @@ namespace LibraryManagementSystem.DataAccess
                 .ToListAsync();
         }
 
-        public async Task<BorrowingRequest?> GetRequestByIdAsync(string requestId)
-        {
-            return await _context.BorrowingRequests.FindAsync(requestId);
-        }
+        public async Task<BorrowingRequest?> GetRequestByIdAsync(string requestId) => 
+            await _context.BorrowingRequests.FindAsync(requestId);
 
         public async Task<bool> AddBorrowingRequestAsync(BorrowingRequest request)
         {
-            try
-            {
-                _context.BorrowingRequests.Add(request);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error adding borrowing request to PostgreSQL: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                }
-                return false;
-            }
+            return await AddEntityAsync(request);
         }
 
         public async Task<bool> UpdateBorrowingRequestAsync(BorrowingRequest request)
         {
-            try
-            {
-                _context.BorrowingRequests.Update(request);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating borrowing request in PostgreSQL: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
-                }
-                return false;
-            }
+            return await UpdateEntityAsync(request);
         }
 
         public async Task<bool> DeleteBorrowingRequestAsync(string requestId)
         {
-            try
-            {
-                var request = await _context.BorrowingRequests.FindAsync(requestId);
-                if (request == null) return false;
-
-                _context.BorrowingRequests.Remove(request);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
+            return await DeleteEntityAsync<BorrowingRequest>(requestId);
         }
 
         public void Dispose()

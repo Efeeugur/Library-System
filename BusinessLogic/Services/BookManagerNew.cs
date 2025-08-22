@@ -4,13 +4,10 @@ using LibraryManagementSystem.Models;
 
 namespace LibraryManagementSystem.BusinessLogic.Services
 {
-    public class BookManagerNew : IBookCRUD, IBookLending
+    public class BookManagerNew : BaseService, IBookCRUD, IBookLending
     {
-        private readonly IDataRepository _dataRepository;
-
-        public BookManagerNew(IDataRepository dataRepository)
+        public BookManagerNew(IDataRepository dataRepository) : base(dataRepository)
         {
-            _dataRepository = dataRepository;
         }
 
         public async Task<bool> AddBookAsync(string title, string author, int publicationYear, string? isbn = null)
@@ -22,7 +19,7 @@ namespace LibraryManagementSystem.BusinessLogic.Services
         public async Task<bool> UpdateBookAsync(string isbn, Book bookData)
         {
             var book = await _dataRepository.GetBookByIsbnAsync(isbn);
-            if (book == null)
+            if (!IsEntityFound(book))
                 return false;
 
             book.Title = bookData.Title;
@@ -37,31 +34,29 @@ namespace LibraryManagementSystem.BusinessLogic.Services
         public async Task<bool> DeleteBookAsync(string isbn)
         {
             var book = await _dataRepository.GetBookByIsbnAsync(isbn);
-            if (book == null || book.Status == BookStatus.Borrowed)
+            if (!IsEntityFound(book) || book.Status == BookStatus.Borrowed)
                 return false;
 
             return await _dataRepository.DeleteBookAsync(book.BookId);
         }
 
-        public async Task<Book?> GetBookByIsbnAsync(string isbn)
-        {
-            return await _dataRepository.GetBookByIsbnAsync(isbn);
-        }
+        // Direct repository calls - no additional business logic needed
+        public async Task<Book?> GetBookByIsbnAsync(string isbn) => 
+            await _dataRepository.GetBookByIsbnAsync(isbn);
 
-        public async Task<List<Book>> GetAllBooksAsync()
-        {
-            return await _dataRepository.LoadBooksAsync();
-        }
+        public async Task<List<Book>> GetAllBooksAsync() => 
+            await _dataRepository.LoadBooksAsync();
 
-        public async Task<List<Book>> SearchBooksAsync(string searchTerm)
-        {
-            return await _dataRepository.SearchBooksAsync(searchTerm);
-        }
+        public async Task<List<Book>> SearchBooksAsync(string searchTerm) => 
+            await _dataRepository.SearchBooksAsync(searchTerm);
 
         public async Task<bool> LendBookAsync(string userId, string isbn)
         {
+            if (IsNullOrEmpty(userId) || IsNullOrEmpty(isbn))
+                return false;
+
             var book = await _dataRepository.GetBookByIsbnAsync(isbn);
-            if (book == null || book.Status == BookStatus.Borrowed)
+            if (!IsEntityFound(book) || book.Status == BookStatus.Borrowed)
                 return false;
 
             book.Status = BookStatus.Borrowed;
@@ -73,12 +68,15 @@ namespace LibraryManagementSystem.BusinessLogic.Services
 
         public async Task<bool> ReturnBookAsync(string userId, string isbn)
         {
+            if (IsNullOrEmpty(userId) || IsNullOrEmpty(isbn))
+                return false;
+
             var book = await _dataRepository.GetBookByIsbnAsync(isbn);
-            if (book == null || book.Status == BookStatus.Available)
+            if (!IsEntityFound(book) || book.Status == BookStatus.Available)
                 return false;
 
             var record = await _dataRepository.GetActiveBorrowingRecordAsync(userId, book.BookId);
-            if (record == null)
+            if (!IsEntityFound(record))
                 return false;
 
             book.Status = BookStatus.Available;
