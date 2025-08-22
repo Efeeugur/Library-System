@@ -17,14 +17,9 @@ namespace LibraryManagementSystem.DataAccess
         {
             try
             {
-                // For schema changes, we need to recreate the database
-                // This will drop and recreate tables with the correct schema
-                await _context.Database.EnsureDeletedAsync();
+                // Only create database if it doesn't exist - preserves existing data
                 await _context.Database.EnsureCreatedAsync();
-                Console.WriteLine("PostgreSQL database recreated with updated schema.");
-                
-                // Seed sample books for easier testing
-                await SeedSampleBooksAsync();
+                Console.WriteLine("PostgreSQL database initialized successfully.");
             }
             catch (Exception ex)
             {
@@ -33,48 +28,6 @@ namespace LibraryManagementSystem.DataAccess
             }
         }
 
-        private async Task SeedSampleBooksAsync()
-        {
-            try
-            {
-                var sampleBooks = new List<Book>
-                {
-                    new Book("The Great Gatsby", "F. Scott Fitzgerald", 1925, "978-0-7432-7356-5"),
-                    new Book("To Kill a Mockingbird", "Harper Lee", 1960, "978-0-06-112008-4"),
-                    new Book("1984", "George Orwell", 1949, "978-0-452-28423-4"),
-                    new Book("Pride and Prejudice", "Jane Austen", 1813, "978-0-14-143951-8"),
-                    new Book("The Catcher in the Rye", "J.D. Salinger", 1951, "978-0-316-76948-0"),
-                    new Book("Animal Farm", "George Orwell", 1945, "978-0-452-28424-1"),
-                    new Book("Lord of the Flies", "William Golding", 1954, "978-0-571-05686-2"),
-                    new Book("The Hobbit", "J.R.R. Tolkien", 1937, "978-0-547-92822-7"),
-                    new Book("Fahrenheit 451", "Ray Bradbury", 1953, "978-1-4516-7331-9"),
-                    new Book("Jane Eyre", "Charlotte Brontë", 1847, "978-0-14-144114-6"),
-                    new Book("Wuthering Heights", "Emily Brontë", 1847, "978-0-14-143955-6"),
-                    new Book("The Lord of the Rings", "J.R.R. Tolkien", 1954, "978-0-544-00341-5"),
-                    new Book("Of Mice and Men", "John Steinbeck", 1937, "978-0-14-017739-8"),
-                    new Book("The Adventures of Huckleberry Finn", "Mark Twain", 1884, "978-0-14-243717-4"),
-                    new Book("Brave New World", "Aldous Huxley", 1932, "978-0-06-085052-4"),
-                    new Book("The Kite Runner", "Khaled Hosseini", 2003, "978-1-59463-193-1"),
-                    new Book("Life of Pi", "Yann Martel", 2001, "978-0-15-602732-3"),
-                    new Book("The Book Thief", "Markus Zusak", 2005, "978-0-375-84220-7"),
-                    new Book("The Alchemist", "Paulo Coelho", 1988, "978-0-06-231500-7"),
-                    new Book("One Hundred Years of Solitude", "Gabriel García Márquez", 1967, "978-0-06-088328-8")
-                };
-
-                foreach (var book in sampleBooks)
-                {
-                    _context.Books.Add(book);
-                }
-
-                await _context.SaveChangesAsync();
-                Console.WriteLine($"Successfully seeded {sampleBooks.Count} sample books to the database.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error seeding sample books: {ex.Message}");
-                // Don't throw - seeding failure shouldn't prevent database initialization
-            }
-        }
 
         public async Task<bool> TestConnectionAsync()
         {
@@ -202,7 +155,7 @@ namespace LibraryManagementSystem.DataAccess
                 {
                     book.ISBN = null;
                 }
-                
+
                 // Check if ISBN already exists (only if not null/empty)
                 if (!string.IsNullOrWhiteSpace(book.ISBN))
                 {
@@ -214,7 +167,7 @@ namespace LibraryManagementSystem.DataAccess
                         return false;
                     }
                 }
-                
+
                 _context.Books.Add(book);
                 await _context.SaveChangesAsync();
                 return true;

@@ -36,11 +36,6 @@ namespace LibraryManagementSystem
                 // Display current data source
                 await DisplayDataSourceInfo();
 
-                // Debug: Check if books are loaded
-                var books = await bookManager.GetAllBooksAsync();
-                Console.WriteLine($"Loaded {books.Count} books from data source.");
-
-                Console.WriteLine("System ready!");
                 await ShowMainMenu();
             }
             catch (Exception ex)
